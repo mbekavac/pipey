@@ -16,6 +16,8 @@ pipeline = [
 apply_pipeline(iter(range(0, 10)), pipeline)
 ```
 
+More complex real-word usage can be found at [my other repo](https://github.com/mbekavac/question_similarity_nlp_features/blob/master/extract_nlp_features.py).
+
 Also comes with support for iterable caching and pre-fetching:
 
 ```python

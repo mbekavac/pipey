@@ -1,10 +1,14 @@
+from __future__ import annotations
+
+from typing import Iterable, Iterator
+
 import pytest
 
-from pipey import apply_pipeline, modifier
+from pipey import PipelineStep, apply_pipeline, modifier
 
 
-def test_apply_pipeline_basic_map_filter_reduce():
-    pipeline = [
+def test_apply_pipeline_basic_map_filter_reduce() -> None:
+    pipeline: list[PipelineStep] = [
         (lambda x: x * 2, modifier.map),
         (lambda x: x > 5, modifier.filter),
         (lambda x: x - 1, modifier.map),
@@ -14,8 +18,8 @@ def test_apply_pipeline_basic_map_filter_reduce():
     assert apply_pipeline(range(10), pipeline) == 77
 
 
-def test_apply_pipeline_reduce_must_be_last():
-    pipeline = [
+def test_apply_pipeline_reduce_must_be_last() -> None:
+    pipeline: list[PipelineStep] = [
         (lambda x: x + 1, modifier.map),
         (lambda x, y: x + y, modifier.reduce),
         (lambda x: x * 2, modifier.map),
@@ -25,8 +29,8 @@ def test_apply_pipeline_reduce_must_be_last():
         apply_pipeline(range(5), pipeline)
 
 
-def test_apply_pipeline_reduce_with_initial_value():
-    pipeline = [
+def test_apply_pipeline_reduce_with_initial_value() -> None:
+    pipeline: list[PipelineStep] = [
         (lambda x: x + 1, modifier.map),
         (lambda acc, x: acc + x, modifier.reduce, 10),
     ]
@@ -34,12 +38,12 @@ def test_apply_pipeline_reduce_with_initial_value():
     assert apply_pipeline(range(3), pipeline) == 16
 
 
-def test_apply_pipeline_window_passthrough():
-    def add_marker(iterable):
+def test_apply_pipeline_window_passthrough() -> None:
+    def add_marker(iterable: Iterable[int]) -> Iterator[tuple[str, int]]:
         for item in iterable:
             yield ("x", item)
 
-    pipeline = [
+    pipeline: list[PipelineStep] = [
         (add_marker, modifier.window),
         (lambda t: t[1], modifier.map),
         (lambda x, y: x + y, modifier.reduce),
@@ -48,7 +52,7 @@ def test_apply_pipeline_window_passthrough():
     assert apply_pipeline(range(4), pipeline) == 6
 
 
-def test_modifier_members():
+def test_modifier_members() -> None:
     assert modifier.map.name == "map"
     assert modifier.filter.name == "filter"
     assert modifier.reduce.name == "reduce"

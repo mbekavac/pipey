@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import pytest
 
 from windowed import WindowedIterable, dewindowify, windowify
 
 
-def test_windowed_iterable_window_size_1():
+def test_windowed_iterable_window_size_1() -> None:
     data = [0, 1, 2]
     result = list(WindowedIterable(data, 1))
 
@@ -14,7 +16,7 @@ def test_windowed_iterable_window_size_1():
     ]
 
 
-def test_windowed_iterable_window_size_2():
+def test_windowed_iterable_window_size_2() -> None:
     data = [0, 1, 2, 3]
     result = list(WindowedIterable(data, 2))
 
@@ -26,7 +28,7 @@ def test_windowed_iterable_window_size_2():
     ]
 
 
-def test_windowed_iterable_window_size_larger_than_data():
+def test_windowed_iterable_window_size_larger_than_data() -> None:
     data = [0, 1]
     result = list(WindowedIterable(data, 10))
 
@@ -36,12 +38,12 @@ def test_windowed_iterable_window_size_larger_than_data():
     ]
 
 
-def test_windowed_iterable_invalid_window_size():
-    with pytest.raises(AssertionError):
+def test_windowed_iterable_invalid_window_size() -> None:
+    with pytest.raises(ValueError):
         WindowedIterable([1, 2, 3], 0)
 
 
-def test_windowify_and_dewindowify_round_trip():
+def test_windowify_and_dewindowify_round_trip() -> None:
     data = [5, 6, 7]
     windowed = windowify(1)(data)
     assert list(dewindowify(windowed)) == data

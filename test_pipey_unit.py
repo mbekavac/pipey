@@ -25,7 +25,7 @@ def test_apply_pipeline_reduce_must_be_last() -> None:
         (lambda x: x * 2, modifier.map),
     ]
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         apply_pipeline(range(5), pipeline)
 
 

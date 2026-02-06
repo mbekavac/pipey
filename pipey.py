@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from enum import Enum
 from functools import reduce
-from typing import Any, Callable, TypeAlias
+from typing import Any, TypeAlias
 
 
 class Modifier(Enum):
@@ -14,40 +15,30 @@ class Modifier(Enum):
 
 modifier = Modifier
 
-PipelineStep: TypeAlias = (
-    tuple[Callable[..., Any], Modifier]
-    | tuple[Callable[..., Any], Modifier, Any]
-)
+PipelineStep: TypeAlias = tuple[Callable[..., Any], Modifier, *tuple[Any, ...]]
 
-__pipeline_functions: dict[Modifier, Callable[..., Any]] = {
+
+def _apply_window(function_to_apply: Callable[..., Any], iterable: Any, *_: Any) -> Any:
+    return function_to_apply(iterable)
+
+
+_PIPELINE_FUNCTIONS: dict[Modifier, Callable[..., Any]] = {
     Modifier.map: map,
     Modifier.filter: filter,
     Modifier.reduce: reduce,
-    Modifier.window: lambda f, x: f(x),
+    Modifier.window: _apply_window,
 }
 
 
-def __apply_pipeline(
-    input_iterable: Any,
-    pipeline: list[PipelineStep],
-) -> Any:
-    if not pipeline:
-        return input_iterable
-
-    function_to_apply, function_type, *optional_parameters = pipeline.pop(0)
-    assert len(pipeline) == 0 or function_type is not Modifier.reduce
-
-    applied_function = __pipeline_functions[function_type](
-        function_to_apply,
-        input_iterable,
-        *optional_parameters,
-    )
-    return __apply_pipeline(applied_function, pipeline)
+def _validate_pipeline(pipeline: Sequence[PipelineStep]) -> None:
+    for index, (_, function_type, *_) in enumerate(pipeline):
+        if function_type is Modifier.reduce and index != len(pipeline) - 1:
+            raise ValueError("Reduce step must be the last element in the pipeline.")
 
 
 def apply_pipeline(
     input_iterable: Any,
-    pipeline: list[PipelineStep],
+    pipeline: Sequence[PipelineStep],
 ) -> Any:
     """
     Applies the pipeline to the input iterable.
@@ -56,5 +47,11 @@ def apply_pipeline(
     *optional arguments).
     :return: Iterable over applied pipeline results.
     """
-    pipeline_copy = pipeline[:]
-    return __apply_pipeline(input_iterable, pipeline_copy)
+    _validate_pipeline(pipeline)
+
+    pipeline_output: Any = input_iterable
+    for function_to_apply, function_type, *optional_parameters in pipeline:
+        pipeline_function = _PIPELINE_FUNCTIONS[function_type]
+        pipeline_output = pipeline_function(function_to_apply, pipeline_output, *optional_parameters)
+
+    return pipeline_output

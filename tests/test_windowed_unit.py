@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from windowed import WindowedIterable, dewindowify, windowify
+from pipey import WindowedIterable, dewindowify, windowify
 
 
 def test_windowed_iterable_window_size_1() -> None:

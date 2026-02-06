@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
 from typing import Any, Callable, TypeAlias
 
-from pipey import apply_pipeline, modifier
-from windowed import dewindowify, windowify
+# Allow running directly from a source checkout without editable install.
+ROOT_DIR = Path(__file__).resolve().parents[1]
+SRC_DIR = ROOT_DIR / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+from pipey import apply_pipeline, dewindowify, modifier, windowify
 
 PipelineStep: TypeAlias = (
     tuple[Callable[..., Any], modifier]

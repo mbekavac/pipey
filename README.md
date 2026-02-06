@@ -18,7 +18,8 @@ apply_pipeline(iter(range(0, 10)), pipeline)
 
 Benchmark:
 
-```python benchmark_pipeline.py
+```bash
+python benchmark_pipeline.py
 ```
 
 More complex real-word usage can be found at [my other repo](https://github.com/mbekavac/question_similarity_nlp_features/blob/master/extract_nlp_features.py).

@@ -1,57 +1,52 @@
 from __future__ import annotations
 
-from typing import Callable, Iterable, Iterator, Optional, Self, TypeVar
+from collections import deque
+from collections.abc import Callable, Iterable, Iterator
+from typing import Self, TypeAlias, TypeVar
 
 T = TypeVar("T")
+WindowView: TypeAlias = tuple[list[T], T, list[T]]
 
 
-class WindowedIterable(Iterator[tuple[list[T], T, list[T]]]):
+class WindowedIterable(Iterator[WindowView[T]]):
     """
-    Iterable with an additional capability of looking back or ahead within a specified window size.
-    Each iteration step yields the window before the current element, the current element and the window after the
-    current element.
+    Iterator that yields:
+    - values to the left of the current element (up to ``window_size``),
+    - the current element,
+    - values to the right of the current element (up to ``window_size``).
     """
 
     def __init__(self, iterable: Iterable[T], window_size: int) -> None:
         if window_size < 1:
             raise ValueError("window_size must be >= 1")
-        self._iterable: Iterator[T] = iter(iterable)
-        self._previous: list[T] = []
-        self._current: Optional[T] = None
-        self._next: list[T] = []
+
+        self._source: Iterator[T] = iter(iterable)
         self._window_size = window_size
-        self._is_current_set = False
+        self._left_window: deque[T] = deque(maxlen=window_size)
+        self._right_window: deque[T] = deque()
+        self._fill_right_window()
 
-        self.__get_next(window_size)
-
-    def __get_next(self, number_of_elements: int) -> None:
-        for _ in range(number_of_elements):
+    def _fill_right_window(self) -> None:
+        while len(self._right_window) < self._window_size:
             try:
-                self._next.append(next(self._iterable))
+                self._right_window.append(next(self._source))
             except StopIteration:
                 return
 
     def __iter__(self) -> Self:
         return self
 
-    def __next__(self) -> tuple[list[T], T, list[T]]:
-        if not self._next:
+    def __next__(self) -> WindowView[T]:
+        if not self._right_window:
             raise StopIteration
 
-        if self._is_current_set and self._current is not None:
-            self._previous.append(self._current)
+        current = self._right_window.popleft()
+        self._fill_right_window()
 
-        current = self._next[0]
-        self._current = current
-        self._is_current_set = True
-
-        self._next.pop(0)
-        self.__get_next(1)
-
-        if len(self._previous) > self._window_size:
-            self._previous.pop(0)
-
-        return self._previous[:], current, self._next[:]
+        # Snapshot before recording current as part of the left window for the next step.
+        windowed_value = (list(self._left_window), current, list(self._right_window))
+        self._left_window.append(current)
+        return windowed_value
 
 
 def windowify(window_size: int) -> Callable[[Iterable[T]], WindowedIterable[T]]:
@@ -62,10 +57,11 @@ def windowify(window_size: int) -> Callable[[Iterable[T]], WindowedIterable[T]]:
     """
     def windowed(iterable: Iterable[T]) -> WindowedIterable[T]:
         return WindowedIterable(iterable, window_size)
+
     return windowed
 
 
-def dewindowify(iterable: Iterable[tuple[list[T], T, list[T]]]) -> Iterator[T]:
+def dewindowify(iterable: Iterable[WindowView[T]]) -> Iterator[T]:
     """
     Yields elements from a WindowedIterable without the cached windows. Can be used as a function in pipey pipeline.
     :param iterable: WindowedIterable to be transformed.

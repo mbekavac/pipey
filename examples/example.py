@@ -1,8 +1,24 @@
-from pipey import apply_pipeline, modifier
-from windowed import windowify, dewindowify
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+from typing import Any, Callable, TypeAlias
+
+# Allow running directly from a source checkout without editable install.
+ROOT_DIR = Path(__file__).resolve().parents[1]
+SRC_DIR = ROOT_DIR / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+from pipey import apply_pipeline, dewindowify, modifier, windowify
+
+PipelineStep: TypeAlias = (
+    tuple[Callable[..., Any], modifier]
+    | tuple[Callable[..., Any], modifier, Any]
+)
 
 
-def basic_example():
+def basic_example() -> None:
     print("basic_example steps:")
     print("1. map: x * 2")
     print("2. filter: x > 5")
@@ -11,18 +27,18 @@ def basic_example():
     print("Input: range(0, 10)")
     print("Expected output: 77")
 
-    pipeline = [
+    pipeline: list[PipelineStep] = [
         (lambda x: x * 2, modifier.map),
         (lambda x: x > 5, modifier.filter),
         (lambda x: x - 1, modifier.map),
         (lambda x, y: x + y, modifier.reduce),
     ]
 
-    result = apply_pipeline(iter(range(0, 10)), pipeline)
-    print("basic_example result:", result)
+    result: int = apply_pipeline(range(10), pipeline)
+    print(f"basic_example result: {result}")
 
 
-def windowed_example():
+def windowed_example() -> None:
     print("windowed_example steps:")
     print("1. map: x * 2")
     print("2. window: windowify(2) -> (previous, current, next)")
@@ -32,7 +48,7 @@ def windowed_example():
     print("Input: range(0, 10)")
     print("Expected output: 84")
 
-    pipeline = [
+    pipeline: list[PipelineStep] = [
         (lambda x: x * 2, modifier.map),
         (windowify(2), modifier.window),
         (lambda x: sum(x[0]) > 4, modifier.filter),
@@ -40,8 +56,8 @@ def windowed_example():
         (lambda x, y: x + y, modifier.reduce),
     ]
 
-    result = apply_pipeline(iter(range(0, 10)), pipeline)
-    print("windowed_example result:", result)
+    result: int = apply_pipeline(range(10), pipeline)
+    print(f"windowed_example result: {result}")
 
 
 if __name__ == "__main__":
